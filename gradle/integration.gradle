@@ -1,0 +1,65 @@
+/*
+ * Copyright (C) 2014  Secretaria de Orçamento Federal
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+sourceSets {
+    integTest {
+        groovy.srcDir 'src/integTest/groovy'
+    }
+}
+
+configurations {
+    integTestCompile.extendsFrom testCompile
+    integTestRuntime.extendsFrom testRuntime
+}
+
+dependencies {
+    integTestCompile sourceSets.main.runtimeClasspath
+    integTestCompile group: 'io.undertow', name: 'undertow-core', version: '1.1.0.Beta6'
+    integTestCompile group: 'io.undertow', name: 'undertow-servlet', version: '1.1.0.Beta6'
+    integTestCompile group: 'org.jboss.resteasy', name: 'resteasy-undertow', version: '3.0.8.Final'
+}
+
+task startServer(type: JavaExec, dependsOn: test) {
+    classpath sourceSets.integTest.runtimeClasspath
+    classpath configurations.integTestCompile
+
+    description = 'Start a standalone Undertow web server on port 8080.'
+    main = 'br.gov.siop.rs.UndertowServer'
+
+    if (project.ext['enable_jrebel'])
+        jvmArgs = ["-javaagent:${project.ext['jrebel_jar_path']}"]
+}
+
+plugins.withType(IdeaPlugin) { // lazy as plugin not applied yet
+    idea {
+        module {
+            testSourceDirs += sourceSets.integTest.groovy.srcDirs
+            testSourceDirs += sourceSets.integTest.resources.srcDirs
+            scopes.TEST.plus.add(configurations.integTestCompile)
+            scopes.TEST.plus.add(configurations.integTestRuntime)
+        }
+    }
+}
+
+plugins.withType(EclipsePlugin) { // lazy as plugin not applied yet
+    eclipse {
+        classpath {
+            plusConfigurations.add(configurations.integTestCompile)
+            plusConfigurations.add(configurations.integTestRuntime)
+        }
+    }
+}

@@ -1,0 +1,76 @@
+/*
+ * Copyright (C) 2014  Secretaria de Orçamento Federal
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License as published
+ * by the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
+buildscript {
+    repositories {
+        jcenter()
+
+        maven {
+            name 'zt-public-snapshots'
+            url  'http://repos.zeroturnaround.com/nexus/content/groups/zt-public/'
+        }
+    }
+
+    dependencies {
+        classpath group: 'org.zeroturnaround', name: 'gradle-jrebel-plugin', version: '1.1.2'
+        classpath group: 'org.gradle.api.plugins', name: 'gradle-cargo-plugin', version: '1.5'
+    }
+}
+
+// Language support plugins
+apply plugin: 'scala'
+apply plugin: 'groovy'
+
+apply plugin: 'war'   // War assembly plugin
+apply plugin: 'cargo' // App deployment plugin
+
+// IDE Support
+apply plugin: 'idea'
+apply plugin: 'eclipse'
+
+apply from: 'gradle/integration.gradle'
+
+repositories {
+    mavenLocal()
+
+    // Enterprise maven proxy
+    maven { url 'http://drep01:8080/nexus/content/groups/third-party-repos/' }
+    maven { url 'http://repo.spray.io' }
+    maven { url 'http://www.allanbank.com/repo' }
+
+    mavenCentral()
+}
+
+dependencies {
+    compile localGroovy()
+    compile 'org.scala-lang:scala-library:2.11.+'
+
+    compile 'org.jboss.resteasy:resteasy-jaxrs:3.0.8.Final'
+    compile 'org.jboss.resteasy:async-http-servlet-3.0:3.0.8.Final'
+
+    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.7'
+    compile group: 'ch.qos.logback', name: 'logback-classic', version: '1.1.2'
+
+    compile group: 'com.allanbank', name: 'mongodb-async-driver', version: '2.0.1'
+}
+
+if (project.ext['enable_jrebel']) {
+    apply plugin: 'rebel' // JRebel plugin
+
+    // Adds the rebel.xml generation task to the build graph
+    war.dependsOn(generateRebel)
+}
